@@ -1,6 +1,9 @@
 {
   "importMap": "import_map.json",
   "tasks": {
+    "fmt": "deno fmt --ignore=old",
+    "fmt-check": "deno fmt --check --ignore=old",
+    "lint": "deno lint --ignore=old",
     "test": "deno test --ignore=old --lock=test.lock --check=local",
     "test-lock": "deno test --ignore=old --lock=test.lock --lock-write --no-run"
   }

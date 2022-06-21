@@ -3,7 +3,14 @@ import {
   assertNotEquals,
   assertThrows,
 } from "deno/testing/asserts.ts";
-import { assertLeft, assertRight, Either, left, right, wrap } from "./either.ts";
+import {
+  assertLeft,
+  assertRight,
+  Either,
+  left,
+  right,
+  wrap,
+} from "./either.ts";
 import { extract } from "./bindable.ts";
 import {
   assertFirstLaw,
