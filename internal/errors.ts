@@ -5,3 +5,7 @@ export class UnreachableError extends Error {
     super("Congratulations you've reached an unreachable point 🎉");
   }
 }
+
+export class AssertionError extends Error {
+  override name = AssertionError.name;
+}

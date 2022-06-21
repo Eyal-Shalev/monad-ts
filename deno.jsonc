@@ -1,7 +1,7 @@
 {
   "importMap": "import_map.json",
   "tasks": {
-    "test": "deno test --ignore=old --lock=test.lock",
+    "test": "deno test --ignore=old --lock=test.lock --check=local",
     "test-lock": "deno test --ignore=old --lock=test.lock --lock-write --no-run"
   }
 }
