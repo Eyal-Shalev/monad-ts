@@ -47,6 +47,16 @@ export function assertNothing(
   if (!isNothing(x)) throw new AssertionError(msg);
 }
 
+/**
+ * ```ts
+ * import {Maybe, wrap} from "./maybe.ts"
+ * const x: Maybe<number> = wrap(() => {
+ *   const val = Math.random();
+ *   if (val > 0.5) throw new Error();
+ *   return val;
+ * });
+ * ```
+ */
 export function wrap<T>(fn: () => T): Maybe<T> {
   try {
     return just(fn());

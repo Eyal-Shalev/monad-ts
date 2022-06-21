@@ -53,6 +53,16 @@ export function assertLeft<L, R>(
   if (isRight(x)) throw new AssertionError(msg);
 }
 
+/**
+ * ```ts
+ * import {Either, wrap} from "./either.ts"
+ * const x: Either<Error, number> = wrap(() => {
+ *   const val = Math.random();
+ *   if (val > 0.5) throw new Error();
+ *   return val;
+ * });
+ * ```
+ */
 export function wrap<R>(fn: () => R): Either<Error, R> {
   try {
     return right(fn());
