@@ -1,50 +1,59 @@
-import { Bindable } from "./bindable.ts";
-import { AssertionError } from "./internal/errors.ts";
 import { create } from "./internal/object.ts";
+import { makeMatchFn, Matchable } from "./matchable.ts";
 
 const nothingSymbol = Symbol("maybe::none");
 const justSymbol = Symbol("maybe::just");
 
-export interface Just<T> extends Bindable<T> {
-  readonly val: T;
-  type: typeof justSymbol;
-}
-export function just<T>(val: T) {
-  return create<Just<T>>({
-    val,
-    type: justSymbol,
-    bind: (fn) => fn(val),
-  });
+export interface Maybe<TVal> extends Matchable<void | TVal> {
+  bind<TOther>(fn: (val: TVal) => Maybe<TOther>): Maybe<TOther>;
 }
 
-export interface Nothing extends Bindable<void> {
-  type: typeof nothingSymbol;
-}
-export const Nothing = create<Nothing>({
-  type: nothingSymbol,
-  bind: (fn) => fn(),
-});
-export function nothing(_: void) {
-  return Nothing;
+export const nothing = Object.assign(
+  function nothing<TVal = unknown>(_: void): Maybe<TVal> {
+    const obj = create<Maybe<TVal>>({
+      bind,
+      match: makeMatchFn(nothingSymbol, void 0),
+    });
+    return obj;
+    function bind<TOther>(): Maybe<TOther> {
+      return obj as Maybe<unknown> as Maybe<TOther>;
+    }
+  },
+  { type: nothingSymbol },
+);
+
+export function isNothing<T>(x: Matchable<T>) {
+  try {
+    return x.match([nothingSymbol, () => true]);
+  } catch {
+    return false;
+  }
 }
 
-export type Maybe<T> = Nothing | Just<T>;
+export const just = Object.assign(
+  function just<TVal>(val: TVal): Maybe<TVal> {
+    return create<Maybe<TVal>>({
+      bind: (fn) => fn(val),
+      match: makeMatchFn(justSymbol, val),
+    });
+  },
+  { type: justSymbol },
+);
 
-export function isJust<T>(x: Maybe<T>): x is Just<T> {
-  return x.type === justSymbol;
-}
-export function isNothing(x: Maybe<unknown>): x is Nothing {
-  return x === Nothing;
+export function isJust<T>(x: Matchable<T>) {
+  try {
+    return x.match([justSymbol, () => true]);
+  } catch {
+    return false;
+  }
 }
 
-export function assertJust<T>(x: Maybe<T>, msg?: string): asserts x is Just<T> {
-  if (!isJust(x)) throw new AssertionError(msg);
-}
-export function assertNothing(
-  x: Maybe<unknown>,
-  msg?: string,
-): asserts x is Nothing {
-  if (!isNothing(x)) throw new AssertionError(msg);
+export function isMaybe<TVal>(x: Matchable<TVal>): x is Maybe<TVal> {
+  try {
+    return x.match([justSymbol, () => true], [nothingSymbol, () => true]);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -57,10 +66,10 @@ export function assertNothing(
  * });
  * ```
  */
-export function wrap<T>(fn: () => T): Maybe<T> {
+export function wrap<TVal>(fn: () => TVal): Maybe<TVal> {
   try {
     return just(fn());
   } catch {
-    return Nothing;
+    return nothing();
   }
 }

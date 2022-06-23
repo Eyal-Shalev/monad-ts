@@ -1,56 +1,62 @@
-import { Bindable } from "./bindable.ts";
-import { AssertionError } from "./internal/errors.ts";
 import { create } from "./internal/object.ts";
 import { ensureError } from "./internal/pure.ts";
+import { makeMatchFn, Matchable } from "./matchable.ts";
 
-const leftSymbol = Symbol("either::left");
-const rightSymbol = Symbol("either::right");
+export const leftSymbol = Symbol("either::left");
+export const rightSymbol = Symbol("either::right");
 
-export interface Right<R> extends Bindable<R> {
-  readonly val: R;
-  type: typeof rightSymbol;
-  isRight: true;
-}
-export function right<R>(val: R) {
-  return create<Right<R>>({
-    val,
-    isRight: true,
-    type: rightSymbol,
-    bind: (fn) => fn(val),
-  });
+export interface Either<TLeft, TRight> extends Matchable<TLeft | TRight> {
+  bind<TOther>(
+    fn: (val: TRight) => Either<TLeft, TOther>,
+  ): Either<TLeft, TOther>;
 }
 
-export interface Left<L> extends Bindable<L> {
-  readonly val: L;
-  isRight: false;
-  type: typeof leftSymbol;
-}
-export function left<L>(val: L) {
-  return create<Left<L>>({
-    val,
-    isRight: false,
-    type: leftSymbol,
-    bind: (fn) => fn(val),
-  });
-}
+export const left = Object.assign(
+  function left<TLeft, TRight = unknown>(val: TLeft): Either<TLeft, TRight> {
+    const obj = create<Either<TLeft, TRight>>({
+      bind,
+      match: makeMatchFn(leftSymbol, val),
+    });
+    return obj;
+    function bind<TOther>(): Either<TLeft, TOther> {
+      return obj as Either<TLeft, unknown> as Either<TLeft, TOther>;
+    }
+  },
+  { type: leftSymbol },
+);
 
-export type Either<L, R> = Left<L> | Right<R>;
-
-export const isRight = <L, R>(x: Either<L, R>): x is Right<R> => x.isRight;
-export const isLeft = <L, R>(x: Either<L, R>): x is Left<L> => !x.isRight;
-
-export function assertRight<L, R>(
-  x: Either<L, R>,
-  msg?: string,
-): asserts x is Right<R> {
-  if (!isRight(x)) throw new AssertionError(msg);
+export function isLeft<T>(x: Matchable<T>) {
+  try {
+    return x.match([leftSymbol, () => true]);
+  } catch {
+    return false;
+  }
 }
 
-export function assertLeft<L, R>(
-  x: Either<L, R>,
-  msg?: string,
-): asserts x is Left<L> {
-  if (isRight(x)) throw new AssertionError(msg);
+export const right = Object.assign(
+  function right<TRight, TLeft = unknown>(val: TRight): Either<TLeft, TRight> {
+    return create<Either<TLeft, TRight>>({
+      bind: (fn) => fn(val),
+      match: makeMatchFn(rightSymbol, val),
+    });
+  },
+  { type: rightSymbol },
+);
+
+export function isRight<T>(x: Matchable<T>) {
+  try {
+    return x.match([rightSymbol, () => true]);
+  } catch {
+    return false;
+  }
+}
+
+export function isEither<T>(x: Matchable<T>): x is Either<T, T> {
+  try {
+    return x.match([rightSymbol, () => true], [leftSymbol, () => true]);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -63,7 +69,7 @@ export function assertLeft<L, R>(
  * });
  * ```
  */
-export function wrap<R>(fn: () => R): Either<Error, R> {
+export function wrap<TRightVal>(fn: () => TRightVal): Either<Error, TRightVal> {
   try {
     return right(fn());
   } catch (err) {

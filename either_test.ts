@@ -1,65 +1,49 @@
-import {
-  assertEquals,
-  assertNotEquals,
-  assertThrows,
-} from "deno/testing/asserts.ts";
-import {
-  assertLeft,
-  assertRight,
-  Either,
-  left,
-  right,
-  wrap,
-} from "./either.ts";
-import { extract } from "./bindable.ts";
-import {
-  assertFirstLaw,
-  assertSecondLaw,
-  assertThirdLaw,
-} from "./internal/test_utils.ts";
+import { assertEquals, assertThrows } from "deno/testing/asserts.ts";
+import { left, right, wrap } from "./either.ts";
+import { identity } from "./internal/pure.ts";
+import { Matchable } from "./matchable.ts";
 
-function makeDouble(unit: typeof left | typeof right) {
-  return (val: number) => unit(val);
+function extract<T, M extends Matchable<T>>(m: M): [T | void, symbol] {
+  return m.match(
+    [right.type, (val) => [val, right.type]],
+    [left.type, (val) => [val, left.type]],
+  );
 }
 
-function makeToggle(unit: typeof left | typeof right) {
-  if (unit === left) return right;
-  else return left;
-}
+const half = (val: number) => right(val / 2);
+const inc3 = (val: number) => right(val + 3);
 
-Deno.test(async function testFirstLaw(t) {
-  for (const unit of [right, left]) {
-    await t.step({
-      name: unit.name,
-      fn: () => assertFirstLaw(Math.random(), unit, makeDouble(unit)),
-    });
-  }
+Deno.test(function testFirstLaw() {
+  const init = Math.random();
+  assertEquals(
+    extract(half(init)),
+    extract(right(init).bind(half)),
+    `${right.name} is a left-identity for bind`,
+  );
 });
 
-Deno.test(async function testSecondLaw(t) {
-  for (const unit of [left, right]) {
-    await t.step({
-      name: unit.name,
-      fn: () => assertSecondLaw(Math.random(), unit),
-    });
-  }
+Deno.test(function testSecondLaw() {
+  const ma = right(Math.random());
+  assertEquals(
+    extract(ma),
+    extract(ma.bind(right)),
+    `${right.name} is a right-identity for bind`,
+  );
 });
 
-Deno.test(async function testThirdLaw(t) {
-  for (const unit of [left, right]) {
-    await t.step({
-      name: unit.name,
-      fn: () => {
-        assertThirdLaw(Math.random(), unit, makeDouble(unit), makeToggle(unit));
-      },
-    });
-  }
+Deno.test(function testThirdLaw() {
+  const ma = right(Math.random());
+  assertEquals(
+    extract(ma.bind(half).bind(inc3)),
+    extract(ma.bind((x) => half(x).bind(inc3))),
+    `${right.name} is essentially associative`,
+  );
 });
 
 Deno.test(function testWrap() {
   assertEquals(
     extract(right(42)),
-    extract<unknown>(wrap(() => 42)),
+    extract(wrap(() => 42)),
   );
   assertEquals(
     extract(left(new Error("expected"))),
@@ -69,16 +53,13 @@ Deno.test(function testWrap() {
   );
 });
 
-Deno.test(function testUnit() {
-  assertNotEquals(
-    right(42),
-    left(42) as Either<number, number>,
+Deno.test(function testMatch() {
+  assertEquals(right(42).match([right.type, identity]), 42);
+  assertEquals(left(42).match([left.type, identity]), 42);
+  assertThrows(() => right(42).match([left.type, identity]));
+  assertThrows(() => left(42).match([right.type, identity]));
+  assertEquals(
+    right(42).match([left.type, identity], [right.type, identity]),
+    42,
   );
-});
-
-Deno.test(function testAssertions() {
-  assertRight(right(42));
-  assertLeft(left(42));
-  assertThrows(() => assertRight(left(42)));
-  assertThrows(() => assertLeft(right(42)));
 });
