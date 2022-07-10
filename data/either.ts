@@ -1,6 +1,6 @@
 import { create } from "../internal/object.ts";
 import { ensureError } from "../internal/pure.ts";
-import { makeMatchFn, Matchable, Matcher } from "../base/matchable.ts";
+import { makeMatchFn, Matchable } from "../base/matchable.ts";
 
 export const leftSymbol = Symbol("either::left");
 export const rightSymbol = Symbol("either::right");
