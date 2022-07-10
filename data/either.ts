@@ -1,6 +1,6 @@
-import { create } from "./internal/object.ts";
-import { ensureError } from "./internal/pure.ts";
-import { makeMatchFn, Matchable } from "./matchable.ts";
+import { create } from "../internal/object.ts";
+import { ensureError } from "../internal/pure.ts";
+import { makeMatchFn, Matchable, Matcher } from "../base/matchable.ts";
 
 export const leftSymbol = Symbol("either::left");
 export const rightSymbol = Symbol("either::right");
@@ -57,6 +57,17 @@ export function isEither<T>(x: Matchable<T>): x is Either<T, T> {
   } catch {
     return false;
   }
+}
+
+export function match<TLeft, TRight, TOut>(
+  m: Either<TLeft, TRight>,
+  onLeft: (_: TLeft) => TOut,
+  onRight: (_: TRight) => TOut,
+): TOut {
+  return m.match(
+    [leftSymbol, (x) => onLeft(x as TLeft)],
+    [rightSymbol, (x) => onRight(x as TRight)],
+  );
 }
 
 /**

@@ -1,8 +1,9 @@
-import { create } from "./internal/object.ts";
-import { makeMatchFn, Matchable } from "./matchable.ts";
+import { create } from "../internal/object.ts";
+import { makeMatchFn, Matchable } from "../base/matchable.ts";
 
-const nothingSymbol = Symbol("maybe::none");
-const justSymbol = Symbol("maybe::just");
+const nothingSymbol: unique symbol = Symbol("maybe::none");
+const justSymbol: unique symbol = Symbol("maybe::just");
+type TMaybeSymbol = typeof nothingSymbol | typeof justSymbol;
 
 export interface Maybe<TVal> extends Matchable<void | TVal> {
   bind<TOther>(fn: (val: TVal) => Maybe<TOther>): Maybe<TOther>;
@@ -54,6 +55,17 @@ export function isMaybe<TVal>(x: Matchable<TVal>): x is Maybe<TVal> {
   } catch {
     return false;
   }
+}
+
+export function match<TVal, TOut>(
+  m: Maybe<TVal>,
+  onNothing: () => TOut,
+  onJust: (_: TVal) => TOut,
+): TOut {
+  return m.match(
+    [nothingSymbol, () => onNothing()],
+    [justSymbol, (x) => onJust(x as TVal)],
+  );
 }
 
 /**

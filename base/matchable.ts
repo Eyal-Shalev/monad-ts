@@ -1,10 +1,14 @@
-import { MatchError } from "./internal/errors.ts";
+import { MatchError } from "../internal/errors.ts";
 
 export type Matcher<T, O> = [symbol, (_: T) => O];
 
 export interface Matchable<T> {
   match<O>(matcher: Matcher<T, O>): O;
   match<O>(...matchers: Matcher<T, O>[]): O;
+}
+
+export function isMatchable<T>(x: Partial<Matchable<T>>): x is Matchable<T> {
+  return !!x && "match" in x && typeof x.match === "function";
 }
 
 export function makeMatchFn<T>(targetType: symbol, val: T) {

@@ -1,7 +1,7 @@
 import { assertEquals, assertThrows } from "deno/testing/asserts.ts";
 import { left, right, wrap } from "./either.ts";
-import { identity } from "./internal/pure.ts";
-import { Matchable } from "./matchable.ts";
+import { identity } from "../internal/pure.ts";
+import { Matchable } from "../base/matchable.ts";
 
 function extract<T, M extends Matchable<T>>(m: M): [T | void, symbol] {
   return m.match(

@@ -1,5 +1,5 @@
-import { create } from "./internal/object.ts";
-import { makeMatchFn, Matchable } from "./matchable.ts";
+import { create } from "../internal/object.ts";
+import { makeMatchFn, Matchable } from "../base/matchable.ts";
 
 export type GlobalThis = typeof globalThis;
 
@@ -18,7 +18,7 @@ export interface IO<TOut, TWorld = GlobalThis>
  * Example:
  * ```typescript
  * import { io } from "./io.ts";
- * import { isJust, just, Maybe, nothing } from "./maybe.ts";
+ * import { isJust, just, Maybe, nothing } from "../data/maybe.ts";
  *
  * function log(msg?: string) {
  *   return io((w) => w.console.log(msg));
