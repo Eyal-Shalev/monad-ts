@@ -3,3 +3,6 @@ export type Increment = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 
 export interface Concatable<T> {
 	concat(other: T): this;
 }
+
+export type GetParam<T> = T extends (params: infer TParam) => unknown ? TParam : never
+export type GetReturnType<T> = T extends (...params: unknown[]) => infer TReturn ? TReturn : never

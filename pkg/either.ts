@@ -1,7 +1,7 @@
 import { ensureError } from "../internal/ensure_error.ts";
 import { Fold } from "../internal/fold.ts";
 import { compose2 } from "../internal/func_tools.ts";
-import { Concatable } from "../internal/type_tools.ts";
+import { Concatable, GetParam, GetReturnType } from "../internal/type_tools.ts";
 
 type ValueLeft<T> = { left: T };
 type ValueRight<T> = { right: T };
@@ -17,8 +17,6 @@ function isRight<TLeft, TRight>(value: Value<TLeft, TRight>): value is ValueRigh
 type ApEither<TLeft, TRight> = TRight extends (param: infer TParam) => infer TReturn
 	? Either<TLeft, (_: TParam) => TReturn>
 	: never;
-type ApParam<T> = T extends (param: infer TParam) => unknown ? TParam : never;
-type ApReturn<T> = T extends (_: unknown) => infer TReturn ? TReturn : never;
 
 export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 	#value: Value<TLeft, TRight>;
@@ -64,7 +62,7 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 		}
 	}
 
-	bind<OLeft, ORight>(fn: (_: TRight) => Either<OLeft | TLeft, ORight>) {
+	bind<OLeft, ORight>(fn: (_: TRight) => Either<OLeft, ORight>): Either<OLeft | TLeft, ORight> {
 		return this.fold(
 			() => this as unknown as Either<OLeft | TLeft, ORight>,
 			(rightVal) => fn(rightVal),
@@ -93,11 +91,11 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 	 */
 	ap<OLeft>(
 		this: ApEither<TLeft, TRight>,
-		other: Either<OLeft, ApParam<TRight>>,
-	): Either<TLeft | OLeft, ApReturn<TRight>> {
-		return other.bind<TLeft, ApReturn<TRight>>((otherValue) => {
-			if (isLeft(this.#value)) return this as unknown as Either<TLeft | OLeft, ApReturn<TRight>>;
-			return Either.right(this.#value.right(otherValue) as ApReturn<TRight>);
+		other: Either<OLeft, GetParam<TRight>>,
+	): Either<TLeft | OLeft, GetReturnType<TRight>> {
+		return other.bind((otherValue) => {
+			if (isLeft(this.#value)) return this as unknown as Either<TLeft | OLeft, GetReturnType<TRight>>;
+			return Either.right(this.#value.right(otherValue) as GetReturnType<TRight>);
 		});
 	}
 
