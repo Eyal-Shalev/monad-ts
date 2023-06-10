@@ -1,0 +1,22 @@
+{
+	"deno.enable": true,
+	"deno.lint": true,
+	"deno.unstable": true,
+	"deno.suggest.completeFunctionCalls": true,
+	"deno.codeLens.implementations": false,
+	"deno.codeLens.references": false,
+	"deno.codeLens.test": true,
+	"deno.config": "./deno.json",
+	"editor.tabSize": 2,
+	"editor.formatOnSave": true,
+	"editor.insertSpaces": false,
+	"editor.formatOnPaste": false,
+	"editor.detectIndentation": true,
+	"files.autoGuessEncoding": true,
+	"files.insertFinalNewline": true,
+	"files.readonlyFromPermissions": true,
+	"files.trimFinalNewlines": true,
+	"files.trimTrailingWhitespace": true,
+	"javascript.format.semicolons": "insert",
+	"js/ts.implicitProjectConfig.target": "ESNext"
+}
