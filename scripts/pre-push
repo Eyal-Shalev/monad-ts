@@ -1,0 +1,6 @@
+#!/bin/sh
+
+scripts_dir="$(cd "$(dirname "$0")" && pwd -P)"
+
+"$scripts_dir/pre-commit" || exit 1
+deno task test || exit 1
