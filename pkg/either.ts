@@ -1,7 +1,6 @@
 import { ensureError } from "../internal/ensure_error.ts";
-import { Fold } from "../internal/fold.ts";
 import { compose2 } from "../internal/func_tools.ts";
-import { Concatable, GetParam, GetReturnType } from "../internal/type_tools.ts";
+import { AsArray, AsString, Fold, GetParam, GetReturnType } from "../internal/type_tools.ts";
 
 type ValueLeft<T> = { left: T };
 type ValueRight<T> = { right: T };
@@ -15,7 +14,7 @@ function isRight<TLeft, TRight>(value: Value<TLeft, TRight>): value is ValueRigh
 }
 
 type ApEither<TLeft, TRight> = TRight extends (param: infer TParam) => infer TReturn
-	? Either<TLeft, (_: TParam) => TReturn>
+	? Either<TLeft, TRight & ((_: TParam) => TReturn)>
 	: never;
 
 export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
@@ -29,6 +28,10 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 		}
 
 		this.#value = value;
+	}
+
+	static unit<TLeft, TRight>(value: TRight): Either<TLeft, TRight> {
+		return Either.right(value);
 	}
 
 	static right<TLeft, TRight>(rightValue: TRight): Either<TLeft, TRight> {
@@ -73,8 +76,28 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 		return this.bind(compose2(fn, Either.right<TLeft, TReturn>));
 	}
 
-	concat<OLeft>(other: Either<OLeft, Concatable<TRight>>): Either<TLeft | OLeft, Concatable<TRight>> {
-		return this.bind((rightValue) => other.lift((otherValue) => otherValue.concat(rightValue)));
+	concat<OLeft>(
+		this: Either<TLeft, AsString<TRight>>,
+		other: Either<OLeft, AsString<TRight>>,
+	): Either<TLeft | OLeft, AsString<TRight>>;
+	concat<OLeft>(
+		this: Either<TLeft, AsArray<TRight>>,
+		other: Either<OLeft, AsArray<TRight>>,
+	): Either<TLeft | OLeft, AsArray<TRight>>;
+	concat<OLeft>(
+		this: Either<TLeft, AsString<TRight> | AsArray<TRight>>,
+		other: Either<OLeft, AsString<TRight> | AsArray<TRight>>,
+	): Either<TLeft | OLeft, AsString<TRight> | AsArray<TRight>> {
+		return this.bind((rightValue) =>
+			other.lift((otherValue) => {
+				if (typeof rightValue === "string" && typeof otherValue === "string") {
+					return rightValue.concat(otherValue) as AsString<TRight>;
+				} else if (typeof rightValue !== "string" && typeof otherValue !== "string") {
+					return rightValue.concat(otherValue) as AsArray<TRight>;
+				}
+				throw new TypeError(`Cannot concatenate values of type "${typeof rightValue}" and "${typeof otherValue}"`);
+			})
+		);
 	}
 
 	/**
