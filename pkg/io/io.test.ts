@@ -1,12 +1,20 @@
-import { assert, assertEquals, assertFalse, assertStrictEquals } from "../../deps/std/testing/asserts.ts";
 import IO from "./io.ts";
-import { Consolable } from "./global_types.ts";
+import { assert, assertEquals, assertFalse, assertMatch, assertStrictEquals } from "../../deps/std/testing/asserts.ts";
+import { assertSpyCalls, returnsNext, spy } from "../../deps/std/testing/mock.ts";
+import { Alertable, Consolable, Promptable } from "./global_types.ts";
 import { doubleUnit, inc, incUnit } from "../../internal/test_utils.ts";
 
 function consoleProxy(fn: (p: string | symbol) => (...args: unknown[]) => void) {
 	return new Proxy(globalThis.console, {
 		get: (_, p: string | symbol) => fn(p),
 	});
+}
+
+function $alert<TEnv extends Alertable>(message?: string) {
+	return IO.fromEffect(({ alert }: TEnv) => alert(message));
+}
+function $prompt<TEnv extends Promptable>(message?: string, defaultValue?: string) {
+	return IO.fromEffect(({ prompt }: TEnv) => prompt(message, defaultValue));
 }
 
 Deno.test("IO", async (t) => {
@@ -81,5 +89,26 @@ Deno.test("IO", async (t) => {
 				return (...args) => assertEquals(args, ["from IO"]);
 			}),
 		});
+	});
+
+	await t.step("flow", async () => {
+		const promptResults = ["Foo", "Bar"];
+		const env = {
+			alert: spy(),
+			prompt: spy(returnsNext(promptResults)),
+		};
+
+		await $alert<Alertable & Promptable>("Welcome to the information center!")
+			.concat($prompt("Please enter your name:"))
+			.bind((name) => $alert(`Hello ${name}!`))
+			.concat($prompt("What is your favorite color?"))
+			.bind((color) => $alert(`Nice choice! ${color} is a great color.`))
+			.concat($alert("Thank you for sharing. Have a great day!"))
+			.run(env);
+
+		assertSpyCalls(env.prompt, 2);
+		assertSpyCalls(env.alert, 4);
+		assertMatch(env.alert.calls[1].args[0], RegExp("(Foo)"));
+		assertMatch(env.alert.calls[2].args[0], RegExp("(Bar)"));
 	});
 });

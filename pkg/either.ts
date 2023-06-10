@@ -30,17 +30,13 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 		this.#value = value;
 	}
 
-	static unit<TLeft, TRight>(value: TRight): Either<TLeft, TRight> {
-		return Either.right(value);
-	}
-
 	static right<TLeft, TRight>(rightValue: TRight): Either<TLeft, TRight> {
 		return new Either({ right: rightValue });
 	}
-
 	static left<TLeft, TRight>(leftValue: TLeft): Either<TLeft, TRight> {
 		return new Either({ left: leftValue });
 	}
+	static readonly unit = Either.right;
 
 	static safeRun<TParams extends unknown[], TReturn>(
 		fn: (...params: TParams) => TReturn,
@@ -100,30 +96,18 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 		);
 	}
 
-	/**
-	 * Example:
-	 * ```ts
-	 * import Either from "./either.ts";
-	 *
-	 * const identity = <T>(x: T) => x
-	 * const inc = (x: number)=>x+1
-	 * const m1 = Either.right(inc)
-	 * const m2 = Either.right(41)
-	 * console.assert(m1.ap(m2).fold(identity, identity) === 42)
-	 * ```
-	 */
 	ap<OLeft>(
 		this: ApEither<TLeft, TRight>,
 		other: Either<OLeft, GetParam<TRight>>,
 	): Either<TLeft | OLeft, GetReturnType<TRight>> {
-		return other.bind((otherValue) => {
-			if (isLeft(this.#value)) return this as unknown as Either<TLeft | OLeft, GetReturnType<TRight>>;
-			return Either.right(this.#value.right(otherValue) as GetReturnType<TRight>);
-		});
+		return other.bind((otherValue) => this.lift((rightValue) => rightValue(otherValue) as GetReturnType<TRight>));
 	}
 
 	get [Symbol.toStringTag](): string {
-		return isLeft(this.#value) ? `left ${String(this.#value.left)}` : `right ${String(this.#value.right)}`;
+		return this.fold(
+			(leftValue) => `left ${String(leftValue)}`,
+			(rightValue) => `right ${String(rightValue)}`,
+		);
 	}
 
 	toString(): string {

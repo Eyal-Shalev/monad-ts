@@ -40,8 +40,8 @@ Deno.test("Either", async (t) => {
 
 	await t.step("left ignores bind: Left a >>= f => Left a", () => {
 		const m = Either.left(Symbol("left"));
-		assertStrictEquals(foldLeft(m.bind(() => Either.left(Symbol("otherLeft")))), foldLeft(m));
-		assertStrictEquals(foldLeft(m.bind(() => Either.right(Symbol("right")))), foldLeft(m));
+		assertStrictEquals(m.bind(() => Either.left(Symbol("otherLeft"))), m);
+		assertStrictEquals(m.bind(() => Either.right(Symbol("right"))), m);
 	});
 
 	await t.step("concat", () => {
