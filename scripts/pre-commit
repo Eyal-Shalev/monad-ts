@@ -1,0 +1,5 @@
+#!/bin/sh
+
+deno task fmt-check || exit 1
+deno task lint || exit 1
+deno task test || exit 1
