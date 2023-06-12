@@ -26,5 +26,10 @@
 		"editor.defaultFormatter": "denoland.vscode-deno"
 	},
 	"deno.codeLens.referencesAllFunctions": false,
-	"javascript.inlayHints.variableTypes.suppressWhenTypeMatchesName": false
+	"javascript.inlayHints.variableTypes.suppressWhenTypeMatchesName": false,
+	"deno.codeLens.testArgs": [
+		"--allow-all",
+		"--no-check",
+		"--lock=test.lock"
+	]
 }

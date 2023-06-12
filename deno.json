@@ -3,13 +3,12 @@
 		"lineWidth": 120,
 		"useTabs": true
 	},
-	"compilerOptions": {
-	},
+	"compilerOptions": {},
 	"tasks": {
-		"fmt": "deno fmt --ignore=old",
-		"fmt-check": "deno fmt --check --ignore=old",
-		"lint": "deno lint --ignore=old",
-		"test": "deno test --ignore=old --lock=test.lock --check=local --shuffle --doc --quiet",
-		"test-lock": "deno test --ignore=old --lock=test.lock --lock-write --no-run --reload --cache"
+		"fmt": "deno fmt",
+		"fmt-check": "deno fmt --check",
+		"lint": "deno lint",
+		"test": "deno test --lock=test.lock --check=local --shuffle --doc --quiet",
+		"test-lock": "deno test --lock=test.lock --lock-write --no-run --reload"
 	}
 }
