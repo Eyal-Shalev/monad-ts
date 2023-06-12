@@ -1,4 +1,4 @@
-import IO from "./io.ts";
+import { fromEffect, unit } from "./io.ts";
 import { assert, assertEquals, assertFalse, assertMatch, assertStrictEquals } from "../../deps/std/testing/asserts.ts";
 import { assertSpyCalls, returnsNext, spy } from "../../deps/std/testing/mock.ts";
 import { Alertable, Consolable, Promptable } from "./global_types.ts";
@@ -11,34 +11,34 @@ function consoleProxy(fn: (p: string | symbol) => (...args: unknown[]) => void) 
 }
 
 function $alert<TEnv extends Alertable>(message?: string) {
-	return IO.fromEffect(({ alert }: TEnv) => alert(message));
+	return fromEffect(({ alert }: TEnv) => alert(message));
 }
 function $prompt<TEnv extends Promptable>(message?: string, defaultValue?: string) {
-	return IO.fromEffect(({ prompt }: TEnv) => prompt(message, defaultValue));
+	return fromEffect(({ prompt }: TEnv) => prompt(message, defaultValue));
 }
 
 Deno.test("IO", async (t) => {
 	await t.step("Unit Rules", async (t) => {
 		await t.step("unit is a left-identity for bind: unit(x) >>= f <-> f(x)", async () => {
 			const value = 21;
-			const f = doubleUnit(IO.unit);
+			const f = doubleUnit(unit);
 			assertStrictEquals(
-				await IO.unit(value).bind(f).run(void 0),
+				await unit(value).bind(f).run(void 0),
 				await f(value).run(void 0),
 			);
 		});
 
 		await t.step("unit is also a right-identity for bind: ma >>= unit <-> ma", async () => {
 			const s = Symbol("foo");
-			const m = IO.unit(s);
-			assertStrictEquals(await m.bind(IO.unit).run(void 0), await m.run(void 0));
+			const m = unit(s);
+			assertStrictEquals(await m.bind(unit).run(void 0), await m.run(void 0));
 		});
 
 		await t.step("bind is essentially associative: ma >>= λx → (f(x) >>= g) <-> (ma >>= f) >>= g", async () => {
 			const value = 20;
-			const m = IO.unit(value);
-			const f = incUnit(IO.unit);
-			const g = doubleUnit(IO.unit);
+			const m = unit(value);
+			const f = incUnit(unit);
+			const g = doubleUnit(unit);
 			assertEquals(
 				await m.bind((x) => f(x).bind(g)).run(void 0),
 				await m.bind(f).bind(g).run(void 0),
@@ -48,14 +48,14 @@ Deno.test("IO", async (t) => {
 
 	await t.step("fold", async () => {
 		assertStrictEquals(
-			await IO.unit(41).lift(inc).run(void 0),
+			await unit(41).lift(inc).run(void 0),
 			42,
 		);
 	});
 
 	await t.step("lift (<$>)", async () => {
 		assertStrictEquals(
-			await IO.unit(41).lift(inc).run(void 0),
+			await unit(41).lift(inc).run(void 0),
 			42,
 		);
 	});
@@ -65,11 +65,11 @@ Deno.test("IO", async (t) => {
 
 		const [s1, s2] = [Symbol("s1"), Symbol("s2")];
 		const [io1, io2] = [
-			IO.fromEffect(() => {
+			fromEffect(() => {
 				flag1 = true;
 				return s1;
 			}),
-			IO.fromEffect(() => {
+			fromEffect(() => {
 				flag2 = true;
 				return s2;
 			}),
@@ -81,7 +81,7 @@ Deno.test("IO", async (t) => {
 	});
 
 	await t.step("Environment Injection", async () => {
-		await IO.fromEffect<Consolable, void>(({ console }) => {
+		await fromEffect<Consolable, void>(({ console }) => {
 			console.log("from IO");
 		}).run({
 			console: consoleProxy((p) => {

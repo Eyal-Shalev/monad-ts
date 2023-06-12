@@ -28,5 +28,10 @@ export interface Fold<TVals extends unknown[]> {
 }
 
 export interface AsyncFold<TVals extends unknown[]> {
-	fold<TReturn>(...fns: FoldParams<TReturn, TVals, 10>): MaybePromise<TReturn>;
+	fold<TReturn>(...fns: FoldParams<TReturn, TVals, 10>): Promise<TReturn>;
+}
+
+export interface Stringer {
+	toString(): string;
+	[Symbol.toStringTag]: string;
 }

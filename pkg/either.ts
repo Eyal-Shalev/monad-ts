@@ -1,6 +1,6 @@
 import { ensureError } from "../internal/ensure_error.ts";
 import { compose2 } from "../internal/func_tools.ts";
-import { AsArray, AsString, Fold, GetParam, GetReturnType } from "../internal/type_tools.ts";
+import { AsArray, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../internal/type_tools.ts";
 
 type ValueLeft<T> = { left: T };
 type ValueRight<T> = { right: T };
@@ -13,44 +13,40 @@ function isRight<TLeft, TRight>(value: Value<TLeft, TRight>): value is ValueRigh
 	return "right" in value;
 }
 
-type ApEither<TLeft, TRight> = TRight extends (param: infer TParam) => infer TReturn
-	? Either<TLeft, TRight & ((_: TParam) => TReturn)>
-	: never;
+export interface Either<TLeft, TRight> extends Fold<[TLeft, TRight]> {
+	bind<OLeft, ORight>(fn: (_: TRight) => Either<OLeft, ORight>): Either<OLeft | TLeft, ORight>;
+	lift<TReturn>(fn: (_: TRight) => TReturn): Either<TLeft, TReturn>;
 
-export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
+	concat<OLeft>(
+		this: Either<TLeft, AsString<TRight>>,
+		other: Either<OLeft, AsString<TRight>>,
+	): Either<TLeft | OLeft, AsString<TRight>>;
+	concat<OLeft>(
+		this: Either<TLeft, AsArray<TRight>>,
+		other: Either<OLeft, AsArray<TRight>>,
+	): Either<TLeft | OLeft, AsArray<TRight>>;
+	concat<OLeft>(
+		this: Either<TLeft, AsString<TRight> | AsArray<TRight>>,
+		other: Either<OLeft, AsString<TRight> | AsArray<TRight>>,
+	): Either<TLeft | OLeft, AsString<TRight> | AsArray<TRight>>;
+
+	ap<OLeft>(
+		this: Either<TLeft, AsFunc<TRight>>,
+		other: Either<OLeft, GetParam<TRight>>,
+	): Either<TLeft | OLeft, GetReturnType<TRight>>;
+}
+
+class EitherCls<TLeft, TRight> implements Either<TLeft, TRight>, Stringer {
 	#value: Value<TLeft, TRight>;
 
-	private constructor(value: ValueRight<TRight>);
-	private constructor(value: ValueLeft<TLeft>);
-	private constructor(value: Value<TLeft, TRight>) {
+	constructor(value: ValueRight<TRight>);
+	constructor(value: ValueLeft<TLeft>);
+	constructor(value: Value<TLeft, TRight>) {
 		if (isLeft(value) == isRight(value)) {
 			throw new TypeError("Either accepts right or left value, but not both.");
 		}
 
 		this.#value = value;
-	}
-
-	static right<TLeft, TRight>(rightValue: TRight): Either<TLeft, TRight> {
-		return new Either({ right: rightValue });
-	}
-	static left<TLeft, TRight>(leftValue: TLeft): Either<TLeft, TRight> {
-		return new Either({ left: leftValue });
-	}
-	static readonly unit = Either.right;
-
-	static safeRun<TParams extends unknown[], TReturn>(
-		fn: (...params: TParams) => TReturn,
-		...params: TParams
-	): Either<Error, TReturn> {
-		try {
-			return Either.right(fn(...params));
-		} catch (error) {
-			return Either.left(ensureError(error));
-		}
-	}
-
-	static safeWrap<TParams extends unknown[], TReturn>(fn: (...params: TParams) => TReturn) {
-		return (...params: TParams) => Either.safeRun(fn, ...params);
 	}
 
 	fold<TReturn>(leftHandler: (_: TLeft) => TReturn, rightHandler: (_: TRight) => TReturn): TReturn {
@@ -69,7 +65,7 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 	}
 
 	lift<TReturn>(fn: (_: TRight) => TReturn): Either<TLeft, TReturn> {
-		return this.bind(compose2(fn, Either.right<TLeft, TReturn>));
+		return this.bind(compose2(fn, right<TLeft, TReturn>));
 	}
 
 	concat<OLeft>(
@@ -97,7 +93,7 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 	}
 
 	ap<OLeft>(
-		this: ApEither<TLeft, TRight>,
+		this: Either<TLeft, AsFunc<TRight>>,
 		other: Either<OLeft, GetParam<TRight>>,
 	): Either<TLeft | OLeft, GetReturnType<TRight>> {
 		return other.bind((otherValue) => this.lift((rightValue) => rightValue(otherValue) as GetReturnType<TRight>));
@@ -105,12 +101,35 @@ export default class Either<TLeft, TRight> implements Fold<[TLeft, TRight]> {
 
 	get [Symbol.toStringTag](): string {
 		return this.fold(
-			(leftValue) => `left ${String(leftValue)}`,
-			(rightValue) => `right ${String(rightValue)}`,
+			(leftValue) => `left(${String(leftValue)})`,
+			(rightValue) => `right(${String(rightValue)})`,
 		);
 	}
 
 	toString(): string {
 		return `[Either.${this[Symbol.toStringTag]}]`;
 	}
+}
+
+export function right<TLeft, TRight>(rightValue: TRight): Either<TLeft, TRight> {
+	return new EitherCls({ right: rightValue });
+}
+export function left<TLeft, TRight>(leftValue: TLeft): Either<TLeft, TRight> {
+	return new EitherCls({ left: leftValue });
+}
+export const unit = right;
+
+export function safeRun<TParams extends unknown[], TReturn>(
+	fn: (...params: TParams) => TReturn,
+	...params: TParams
+): Either<Error, TReturn> {
+	try {
+		return right(fn(...params));
+	} catch (error) {
+		return left(ensureError(error));
+	}
+}
+
+export function safeWrap<TParams extends unknown[], TReturn>(fn: (...params: TParams) => TReturn) {
+	return (...params: TParams) => safeRun(fn, ...params);
 }

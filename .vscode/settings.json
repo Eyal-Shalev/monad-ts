@@ -3,8 +3,8 @@
 	"deno.lint": true,
 	"deno.unstable": true,
 	"deno.suggest.completeFunctionCalls": true,
-	"deno.codeLens.implementations": false,
-	"deno.codeLens.references": false,
+	"deno.codeLens.implementations": true,
+	"deno.codeLens.references": true,
 	"deno.codeLens.test": true,
 	"deno.config": "./deno.json",
 	"editor.tabSize": 2,
@@ -24,5 +24,7 @@
 	},
 	"[typescript]": {
 		"editor.defaultFormatter": "denoland.vscode-deno"
-	}
+	},
+	"deno.codeLens.referencesAllFunctions": false,
+	"javascript.inlayHints.variableTypes.suppressWhenTypeMatchesName": false
 }

@@ -1,4 +1,4 @@
-import { AsArray2, AsFunc, AsString, Fold, GetParam, GetReturnType } from "../internal/type_tools.ts";
+import { AsArray2, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../internal/type_tools.ts";
 
 type JustValue<T> = { just: T };
 const nothingValue = Symbol("nothing");
@@ -32,7 +32,7 @@ export interface Maybe<T> extends Fold<[void, T]> {
 	): Maybe<GetReturnType<T>>;
 }
 
-class MaybeCls<T> implements Fold<[void, T]> {
+class MaybeCls<T> implements Maybe<T>, Stringer {
 	#value: Value<T>;
 
 	constructor(value: NothingValue);
@@ -49,29 +49,29 @@ class MaybeCls<T> implements Fold<[void, T]> {
 		}
 	}
 
-	bind<O>(fn: (_: T) => MaybeCls<O>): MaybeCls<O> {
+	bind<O>(fn: (_: T) => Maybe<O>): Maybe<O> {
 		return this.fold(
 			() => nothing(),
 			(value) => fn(value),
 		);
 	}
 
-	lift<TReturn>(fn: (_: T) => TReturn): MaybeCls<TReturn> {
+	lift<TReturn>(fn: (_: T) => TReturn): Maybe<TReturn> {
 		return this.bind((value) => just(fn(value)));
 	}
 
 	concat(
-		this: MaybeCls<AsString<T>>,
-		other: MaybeCls<AsString<T>>,
-	): MaybeCls<AsString<T>>;
+		this: Maybe<AsString<T>>,
+		other: Maybe<AsString<T>>,
+	): Maybe<AsString<T>>;
 	concat<TItem>(
-		this: MaybeCls<AsArray2<T, TItem>>,
-		other: MaybeCls<AsArray2<T, TItem>>,
-	): MaybeCls<AsArray2<T, TItem>>;
+		this: Maybe<AsArray2<T, TItem>>,
+		other: Maybe<AsArray2<T, TItem>>,
+	): Maybe<AsArray2<T, TItem>>;
 	concat<TItem>(
-		this: MaybeCls<AsString<T> | AsArray2<T, TItem>>,
-		other: MaybeCls<AsString<T> | AsArray2<T, TItem>>,
-	): MaybeCls<AsString<T> | AsArray2<T, TItem>> {
+		this: Maybe<AsString<T> | AsArray2<T, TItem>>,
+		other: Maybe<AsString<T> | AsArray2<T, TItem>>,
+	): Maybe<AsString<T> | AsArray2<T, TItem>> {
 		return this.bind((rightValue) =>
 			other.lift((otherValue) => {
 				if (typeof rightValue === "string" && typeof otherValue === "string") {
@@ -84,22 +84,12 @@ class MaybeCls<T> implements Fold<[void, T]> {
 		);
 	}
 
-	ap(
-		this: MaybeCls<AsFunc<T>>,
-		other: MaybeCls<GetParam<T>>,
-	): MaybeCls<GetReturnType<T>> {
-		const ret = other.bind((otherValue) => {
-			const a = this.lift((value) => value(otherValue) as GetReturnType<T>);
-			return a;
-		});
-		return ret;
+	ap(this: Maybe<AsFunc<T>>, other: Maybe<GetParam<T>>): Maybe<GetReturnType<T>> {
+		return other.bind((otherValue) => this.lift((value) => value(otherValue) as GetReturnType<T>));
 	}
 
 	get [Symbol.toStringTag](): string {
-		return this.fold(
-			() => "nothing",
-			(value) => `just ${String(value)}`,
-		);
+		return this.fold(() => "nothing", (value) => `just ${String(value)}`);
 	}
 
 	toString(): string {
@@ -109,21 +99,21 @@ class MaybeCls<T> implements Fold<[void, T]> {
 
 const nothingInstance = new MaybeCls(nothingValue);
 
-export const nothing = <T>() => nothingInstance as MaybeCls<T>;
-export const just = <T>(value: T): MaybeCls<T> => new MaybeCls({ just: value });
+export const nothing = <T>() => nothingInstance as Maybe<T>;
+export const just = <T>(value: T): Maybe<T> => new MaybeCls({ just: value });
 export const unit = just;
 
 export function isNothing(m: Maybe<unknown>): boolean {
-	return m === nothingInstance;
+	return !!m && m.fold(() => true, () => false);
 }
 export function isJust<T>(m: Maybe<T>): boolean {
-	return !!m && !isNothing(m);
+	return !!m && m.fold(() => false, () => true);
 }
 
 export function safeRun<TParams extends unknown[], TReturn>(
 	fn: (..._: TParams) => TReturn,
 	...params: TParams
-): MaybeCls<TReturn> {
+): Maybe<TReturn> {
 	try {
 		return just(fn(...params));
 	} catch (_) {
