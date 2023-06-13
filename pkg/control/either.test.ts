@@ -1,7 +1,7 @@
-import { assertEquals, assertStrictEquals, fail } from "../deps/std/testing/asserts.ts";
+import { assertEquals, assertStrictEquals, fail } from "../../deps/std/testing/asserts.ts";
 import { Either, left, right, safeRun, safeWrap, unit } from "./either.ts";
-import { identity } from "../internal/func_tools.ts";
-import { doubleUnit, inc, incUnit } from "../internal/test_utils.ts";
+import { identity } from "../../internal/func_tools.ts";
+import { doubleUnit, inc, incUnit } from "../../internal/test_utils.ts";
 
 const expectedError = new Error("expected");
 

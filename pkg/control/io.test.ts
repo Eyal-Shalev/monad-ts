@@ -1,20 +1,14 @@
 import { fromEffect, unit } from "./io.ts";
 import { assert, assertEquals, assertFalse, assertMatch, assertStrictEquals } from "../../deps/std/testing/asserts.ts";
 import { assertSpyCalls, returnsNext, spy } from "../../deps/std/testing/mock.ts";
-import { Alertable, Consolable, Promptable } from "./global_types.ts";
+import { $alert, $prompt, HasAlert, HasPrompt } from "../system/window.ts";
 import { doubleUnit, inc, incUnit } from "../../internal/test_utils.ts";
+import { HasConsole } from "../system/shared_globals.ts";
 
 function consoleProxy(fn: (p: string | symbol) => (...args: unknown[]) => void) {
 	return new Proxy(globalThis.console, {
 		get: (_, p: string | symbol) => fn(p),
 	});
-}
-
-function $alert<TEnv extends Alertable>(message?: string) {
-	return fromEffect(({ alert }: TEnv) => alert(message));
-}
-function $prompt<TEnv extends Promptable>(message?: string, defaultValue?: string) {
-	return fromEffect(({ prompt }: TEnv) => prompt(message, defaultValue));
 }
 
 Deno.test("IO", async (t) => {
@@ -81,7 +75,7 @@ Deno.test("IO", async (t) => {
 	});
 
 	await t.step("Environment Injection", async () => {
-		await fromEffect<Consolable, void>(({ console }) => {
+		await fromEffect<HasConsole, void>(({ console }) => {
 			console.log("from IO");
 		}).run({
 			console: consoleProxy((p) => {
@@ -98,7 +92,7 @@ Deno.test("IO", async (t) => {
 			prompt: spy(returnsNext(promptResults)),
 		};
 
-		await $alert<Alertable & Promptable>("Welcome to the information center!")
+		await $alert<HasAlert & HasPrompt>("Welcome to the information center!")
 			.concat($prompt("Please enter your name:"))
 			.bind((name) => $alert(`Hello ${name}!`))
 			.concat($prompt("What is your favorite color?"))

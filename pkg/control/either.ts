@@ -1,6 +1,6 @@
-import { ensureError } from "../internal/ensure_error.ts";
-import { compose2 } from "../internal/func_tools.ts";
-import { AsArray, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../internal/type_tools.ts";
+import { ensureError } from "../../internal/ensure_error.ts";
+import { compose2 } from "../../internal/func_tools.ts";
+import { AsArray, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../../internal/type_tools.ts";
 
 type ValueLeft<T> = { left: T };
 type ValueRight<T> = { right: T };

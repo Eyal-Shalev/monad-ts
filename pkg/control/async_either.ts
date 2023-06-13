@@ -1,5 +1,13 @@
-import { ensureError } from "../internal/ensure_error.ts";
-import { AsArray, AsFunc, AsString, AsyncFold, GetParam, GetReturnType, MaybePromise } from "../internal/type_tools.ts";
+import { ensureError } from "../../internal/ensure_error.ts";
+import {
+	AsArray,
+	AsFunc,
+	AsString,
+	AsyncFold,
+	GetParam,
+	GetReturnType,
+	MaybePromise,
+} from "../../internal/type_tools.ts";
 import * as either from "./either.ts";
 import type { Either } from "./either.ts";
 

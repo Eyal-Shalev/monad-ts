@@ -1,4 +1,4 @@
-import { AsArray2, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../internal/type_tools.ts";
+import { AsArray2, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../../internal/type_tools.ts";
 
 type JustValue<T> = { just: T };
 const nothingValue = Symbol("nothing");

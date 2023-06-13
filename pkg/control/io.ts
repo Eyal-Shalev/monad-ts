@@ -62,3 +62,7 @@ export function fromValue<TEnv, TValue>(value: TValue): IO<TEnv, TValue> {
 }
 
 export const unit = fromValue;
+
+export const $void = <TEnv>() => fromValue<TEnv, void>(void 0);
+
+export const $getEnv = <TEnv>() => fromEffect<TEnv, TEnv>((env) => env);

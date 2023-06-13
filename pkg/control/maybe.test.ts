@@ -1,6 +1,6 @@
-import { assert, assertEquals, assertStrictEquals, fail } from "../deps/std/testing/asserts.ts";
-import { identity } from "../internal/func_tools.ts";
-import { doubleUnit, inc, incUnit } from "../internal/test_utils.ts";
+import { assert, assertEquals, assertStrictEquals, fail } from "../../deps/std/testing/asserts.ts";
+import { identity } from "../../internal/func_tools.ts";
+import { doubleUnit, inc, incUnit } from "../../internal/test_utils.ts";
 import { isNothing, just, Maybe, nothing, safeRun, safeWrap, unit } from "./maybe.ts";
 
 function foldNothing<T>(m: Maybe<T>): void {
