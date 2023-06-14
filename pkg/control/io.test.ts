@@ -47,7 +47,7 @@ Deno.test("IO", async (t) => {
 		);
 	});
 
-	await t.step("lift (<$>)", async () => {
+	await t.step("lift", async () => {
 		assertStrictEquals(
 			await unit(41).lift(inc).run(void 0),
 			42,

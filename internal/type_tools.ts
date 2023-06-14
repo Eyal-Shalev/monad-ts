@@ -8,6 +8,8 @@ export type AsArray2<T, TItem> = T extends TItem[] ? T & TItem[] : never;
 
 export type AsString<T> = T extends string ? T & string : never;
 
+export type AsTypedFunc<T, TParam, TReturn> = T extends (_: TParam) => TReturn ? T & ((_: TParam) => TReturn) : never;
+
 export type AsFunc<T> = T extends (_: infer TParam) => infer TReturn ? T & ((_: TParam) => TReturn) : never;
 export type GetParam<T> = T extends (_: infer TParam) => unknown ? TParam : never;
 export type GetReturnType<T> = T extends (...params: unknown[]) => infer TReturn ? TReturn : never;

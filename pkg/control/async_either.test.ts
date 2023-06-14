@@ -66,11 +66,11 @@ Deno.test("AsyncEither", async (t) => {
 		);
 	});
 
-	await t.step("lift (<$>)", async (t) => {
-		await t.step("Right x <$> f => Right f(x)", async () => {
+	await t.step("lift", async (t) => {
+		await t.step("Right x -> f => Right f(x)", async () => {
 			assertStrictEquals(await foldRight(right(41).lift(inc)), 42);
 		});
-		await t.step("Left x <$> f => Left x", async () => {
+		await t.step("Left x -> f => Left x", async () => {
 			assertStrictEquals(await foldLeft(left<41, number>(41).lift(inc)), 41);
 		});
 	});

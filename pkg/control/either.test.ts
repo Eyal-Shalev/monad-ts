@@ -15,27 +15,36 @@ function foldRight<TLeft, TRight>(m: Either<TLeft, TRight>): TRight {
 
 Deno.test("Either", async (t) => {
 	await t.step("Unit Rules", async (t) => {
-		await t.step("unit is a left-identity for bind: unit(x) >>= f <-> f(x)", () => {
-			const value = 21;
-			const f = incUnit(unit);
-			assertStrictEquals(foldRight(f(value)), foldRight(unit(value).bind(f)));
-		});
+		await t.step(
+			"unit is a left-identity for bind: unit(x) >>= f <-> f(x)",
+			() => {
+				const value = 21;
+				const f = incUnit(unit);
+				assertStrictEquals(foldRight(f(value)), foldRight(unit(value).bind(f)));
+			},
+		);
 
-		await t.step("unit is also a right-identity for bind: ma >>= unit <-> ma", () => {
-			const m = unit(Symbol("value"));
-			assertStrictEquals(foldRight(m.bind(unit)), foldRight(m));
-		});
+		await t.step(
+			"unit is also a right-identity for bind: ma >>= unit <-> ma",
+			() => {
+				const m = unit(Symbol("value"));
+				assertStrictEquals(foldRight(m.bind(unit)), foldRight(m));
+			},
+		);
 
-		await t.step("bind is essentially associative: ma >>= λx → (f(x) >>= g) <-> (ma >>= f) >>= g", () => {
-			const value = 20;
-			const m = unit(value);
-			const f = incUnit(unit);
-			const g = doubleUnit(unit);
-			assertEquals(
-				foldRight(m.bind((x) => f(x).bind(g))),
-				foldRight(m.bind(f).bind(g)),
-			);
-		});
+		await t.step(
+			"bind is essentially associative: ma >>= λx → (f(x) >>= g) <-> (ma >>= f) >>= g",
+			() => {
+				const value = 20;
+				const m = unit(value);
+				const f = incUnit(unit);
+				const g = doubleUnit(unit);
+				assertEquals(
+					foldRight(m.bind((x) => f(x).bind(g))),
+					foldRight(m.bind(f).bind(g)),
+				);
+			},
+		);
 	});
 
 	await t.step("left ignores bind: Left a >>= f => Left a", () => {
@@ -63,11 +72,11 @@ Deno.test("Either", async (t) => {
 		);
 	});
 
-	await t.step("lift (<$>)", async (t) => {
-		await t.step("Right x <$> f => Right f(x)", () => {
+	await t.step("lift", async (t) => {
+		await t.step("Right x -> f => Right f(x)", () => {
 			assertStrictEquals(foldRight(right(41).lift(inc)), 42);
 		});
-		await t.step("Left x <$> f => Left x", () => {
+		await t.step("Left x -> f => Left x", () => {
 			assertStrictEquals(foldLeft(left<41, number>(41).lift(inc)), 41);
 		});
 	});
@@ -77,10 +86,16 @@ Deno.test("Either", async (t) => {
 			assertStrictEquals(foldRight(right(inc).ap(right(41))), 42);
 		});
 		await t.step("Either e (a->b) <*> Right a => Left e", () => {
-			assertStrictEquals(foldLeft(left<Error, typeof inc>(expectedError).ap(right(41))), expectedError);
+			assertStrictEquals(
+				foldLeft(left<Error, typeof inc>(expectedError).ap(right(41))),
+				expectedError,
+			);
 		});
 		await t.step("Right (a->b) <*> Left e => Left e", () => {
-			assertStrictEquals(foldLeft(right(inc).ap(left<Error, number>(expectedError))), expectedError);
+			assertStrictEquals(
+				foldLeft(right(inc).ap(left<Error, number>(expectedError))),
+				expectedError,
+			);
 		});
 	});
 
@@ -110,7 +125,13 @@ Deno.test("Either", async (t) => {
 		assertEquals(String(left("foo")), "[Either.left(foo)]");
 		assertEquals(String(right("bar")), "[Either.right(bar)]");
 
-		assertEquals(String(left(right("foo"))), "[Either.left([Either.right(foo)])]");
-		assertEquals(String(right(left("bar"))), "[Either.right([Either.left(bar)])]");
+		assertEquals(
+			String(left(right("foo"))),
+			"[Either.left([Either.right(foo)])]",
+		);
+		assertEquals(
+			String(right(left("bar"))),
+			"[Either.right([Either.left(bar)])]",
+		);
 	});
 });

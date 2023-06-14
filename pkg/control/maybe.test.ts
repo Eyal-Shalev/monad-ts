@@ -52,14 +52,14 @@ Deno.test("Maybe", async (t) => {
 		assert(isNothing(nothing<string>().concat(just("hello "))));
 	});
 
-	await t.step("lift (<$>)", async (t) => {
-		await t.step("Maybe.just(x) <$> f => Maybe.just(f(x))", () => {
+	await t.step("lift", async (t) => {
+		await t.step("Maybe.just(x) -> f => Maybe.just(f(x))", () => {
 			assertStrictEquals(
 				foldJust(just(41).lift(inc)),
 				foldJust(just(inc(41))),
 			);
 		});
-		await t.step("Maybe.just(x) <$> f => Maybe.nothing", () => {
+		await t.step("Maybe.just(x) -> f => Maybe.nothing", () => {
 			assertStrictEquals(nothing<number>().lift(inc), nothing());
 		});
 	});
