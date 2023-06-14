@@ -29,7 +29,9 @@
 	"javascript.inlayHints.variableTypes.suppressWhenTypeMatchesName": false,
 	"deno.codeLens.testArgs": [
 		"--allow-all",
-		"--no-check",
-		"--lock=test.lock"
+		"--no-check"
+	],
+	"github-actions.workflows.pinned.workflows": [
+		".github/workflows/test.yml"
 	]
 }

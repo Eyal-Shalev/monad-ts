@@ -8,7 +8,7 @@
 		"fmt": "deno fmt",
 		"fmt-check": "deno fmt --check",
 		"lint": "deno lint",
-		"test": "deno test --lock=test.lock --check=local --shuffle --doc --parallel",
+		"test": "deno test --check=local --shuffle --doc --parallel",
 		"test-lock": "deno task test --lock-write --no-run --reload",
 		"test-watch": "deno task test --watch"
 	}
