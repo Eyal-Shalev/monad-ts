@@ -53,23 +53,10 @@ Deno.test("Either", async (t) => {
 		assertStrictEquals(m.bind(() => right(Symbol("right"))), m);
 	});
 
-	await t.step("concat", () => {
-		assertEquals(
-			foldRight(unit([1, 2]).concat(unit([3, 4]))),
-			[1, 2, 3, 4],
-		);
-		assertStrictEquals(
-			foldRight(unit("hello ").concat(unit("world"))),
-			"hello world",
-		);
-		assertStrictEquals(
-			foldLeft(right("world").concat(left("goodbye"))),
-			"goodbye",
-		);
-		assertStrictEquals(
-			foldLeft(left<string, string>("goodbye").concat(right("hello "))),
-			"goodbye",
-		);
+	await t.step("concat (>>)", () => {
+		assertStrictEquals(foldRight(right("A").concat(right("B"))), "B");
+		assertStrictEquals(foldLeft(left("A").concat(right("B"))), "A");
+		assertStrictEquals(foldLeft(right("A").concat(left("B"))), "B");
 	});
 
 	await t.step("lift", async (t) => {

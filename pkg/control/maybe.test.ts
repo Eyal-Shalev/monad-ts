@@ -1,7 +1,7 @@
-import { assert, assertEquals, assertStrictEquals, fail } from "../../deps/std/testing/asserts.ts";
+import { assertEquals, assertStrictEquals, fail } from "../../deps/std/testing/asserts.ts";
 import { identity } from "../../internal/func_tools.ts";
 import { doubleUnit, inc, incUnit } from "../../internal/test_utils.ts";
-import { isNothing, just, Maybe, nothing, safeRun, safeWrap, unit } from "./maybe.ts";
+import { just, Maybe, nothing, safeRun, safeWrap, unit } from "./maybe.ts";
 
 function foldNothing<T>(m: Maybe<T>): void {
 	return m.fold(() => void 0, () => fail("expected nothing, got just"));
@@ -39,17 +39,10 @@ Deno.test("Maybe", async (t) => {
 		assertStrictEquals(nothing<number>().bind(doubleUnit(unit)), nothing());
 	});
 
-	await t.step("concat", () => {
-		assertEquals(
-			foldJust(unit([1, 2]).concat(unit([3, 4]))),
-			[1, 2, 3, 4],
-		);
-		assertStrictEquals(
-			foldJust(unit("hello ").concat(unit("world"))),
-			"hello world",
-		);
-		assert(isNothing(just("world").concat(nothing())));
-		assert(isNothing(nothing<string>().concat(just("hello "))));
+	await t.step("concat (>>)", () => {
+		assertStrictEquals(foldJust(just(41).concat(just(42))), 42);
+		assertStrictEquals(foldNothing(nothing<number>().concat(just(42))), void 0);
+		assertStrictEquals(foldNothing(just(41).concat(nothing())), void 0);
 	});
 
 	await t.step("lift", async (t) => {

@@ -1,6 +1,6 @@
 import { ensureError } from "../../internal/ensure_error.ts";
 import { compose2 } from "../../internal/func_tools.ts";
-import { AsArray, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../../internal/type_tools.ts";
+import { AsFunc, Fold, GetParam, GetReturnType, Stringer } from "../../internal/type_tools.ts";
 
 type ValueLeft<T> = { left: T };
 type ValueRight<T> = { right: T };
@@ -16,19 +16,7 @@ function isRight<TLeft, TRight>(value: Value<TLeft, TRight>): value is ValueRigh
 export interface Either<TLeft, TRight> extends Fold<[TLeft, TRight]> {
 	bind<OLeft, ORight>(fn: (_: TRight) => Either<OLeft, ORight>): Either<OLeft | TLeft, ORight>;
 	lift<TReturn>(fn: (_: TRight) => TReturn): Either<TLeft, TReturn>;
-
-	concat<OLeft>(
-		this: Either<TLeft, AsString<TRight>>,
-		other: Either<OLeft, AsString<TRight>>,
-	): Either<TLeft | OLeft, AsString<TRight>>;
-	concat<OLeft>(
-		this: Either<TLeft, AsArray<TRight>>,
-		other: Either<OLeft, AsArray<TRight>>,
-	): Either<TLeft | OLeft, AsArray<TRight>>;
-	concat<OLeft>(
-		this: Either<TLeft, AsString<TRight> | AsArray<TRight>>,
-		other: Either<OLeft, AsString<TRight> | AsArray<TRight>>,
-	): Either<TLeft | OLeft, AsString<TRight> | AsArray<TRight>>;
+	concat<OLeft, ORight>(other: Either<OLeft, ORight>): Either<TLeft | OLeft, ORight>;
 
 	ap<OLeft>(
 		this: Either<TLeft, AsFunc<TRight>>,
@@ -68,27 +56,10 @@ class EitherCls<TLeft, TRight> implements Either<TLeft, TRight>, Stringer {
 		return this.bind(compose2(fn, right<TLeft, TReturn>));
 	}
 
-	concat<OLeft>(
-		this: Either<TLeft, AsString<TRight>>,
-		other: Either<OLeft, AsString<TRight>>,
-	): Either<TLeft | OLeft, AsString<TRight>>;
-	concat<OLeft>(
-		this: Either<TLeft, AsArray<TRight>>,
-		other: Either<OLeft, AsArray<TRight>>,
-	): Either<TLeft | OLeft, AsArray<TRight>>;
-	concat<OLeft>(
-		this: Either<TLeft, AsString<TRight> | AsArray<TRight>>,
-		other: Either<OLeft, AsString<TRight> | AsArray<TRight>>,
-	): Either<TLeft | OLeft, AsString<TRight> | AsArray<TRight>> {
-		return this.bind((rightValue) =>
-			other.lift((otherValue) => {
-				if (typeof rightValue === "string" && typeof otherValue === "string") {
-					return rightValue.concat(otherValue) as AsString<TRight>;
-				} else if (typeof rightValue !== "string" && typeof otherValue !== "string") {
-					return rightValue.concat(otherValue) as AsArray<TRight>;
-				}
-				throw new TypeError(`Cannot concatenate values of type "${typeof rightValue}" and "${typeof otherValue}"`);
-			})
+	concat<OLeft, ORight>(other: Either<OLeft, ORight>): Either<TLeft | OLeft, ORight> {
+		return this.fold(
+			() => this as unknown as Either<TLeft | OLeft, ORight>,
+			() => other,
 		);
 	}
 

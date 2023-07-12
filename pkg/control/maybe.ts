@@ -1,4 +1,4 @@
-import { AsArray2, AsFunc, AsString, Fold, GetParam, GetReturnType, Stringer } from "../../internal/type_tools.ts";
+import { AsFunc, Fold, GetParam, GetReturnType, Stringer } from "../../internal/type_tools.ts";
 
 type JustValue<T> = { just: T };
 const nothingValue = Symbol("nothing");
@@ -12,19 +12,7 @@ function isNothingValue<T>(value: Value<T>): value is NothingValue {
 export interface Maybe<T> extends Fold<[void, T]> {
 	bind<O>(fn: (_: T) => Maybe<O>): Maybe<O>;
 	lift<TReturn>(fn: (_: T) => TReturn): Maybe<TReturn>;
-
-	concat(
-		this: Maybe<AsString<T>>,
-		other: Maybe<AsString<T>>,
-	): Maybe<AsString<T>>;
-	concat<TItem>(
-		this: Maybe<AsArray2<T, TItem>>,
-		other: Maybe<AsArray2<T, TItem>>,
-	): Maybe<AsArray2<T, TItem>>;
-	concat<TItem>(
-		this: Maybe<AsString<T> | AsArray2<T, TItem>>,
-		other: Maybe<AsString<T> | AsArray2<T, TItem>>,
-	): Maybe<AsString<T> | AsArray2<T, TItem>>;
+	concat<O>(other: Maybe<O>): Maybe<O>;
 
 	ap(
 		this: Maybe<AsFunc<T>>,
@@ -60,27 +48,10 @@ class MaybeCls<T> implements Maybe<T>, Stringer {
 		return this.bind((value) => just(fn(value)));
 	}
 
-	concat(
-		this: Maybe<AsString<T>>,
-		other: Maybe<AsString<T>>,
-	): Maybe<AsString<T>>;
-	concat<TItem>(
-		this: Maybe<AsArray2<T, TItem>>,
-		other: Maybe<AsArray2<T, TItem>>,
-	): Maybe<AsArray2<T, TItem>>;
-	concat<TItem>(
-		this: Maybe<AsString<T> | AsArray2<T, TItem>>,
-		other: Maybe<AsString<T> | AsArray2<T, TItem>>,
-	): Maybe<AsString<T> | AsArray2<T, TItem>> {
-		return this.bind((rightValue) =>
-			other.lift((otherValue) => {
-				if (typeof rightValue === "string" && typeof otherValue === "string") {
-					return rightValue.concat(otherValue) as AsString<T>;
-				} else if (typeof rightValue !== "string" && typeof otherValue !== "string") {
-					return rightValue.concat(otherValue) as AsArray2<T, TItem>;
-				}
-				throw new TypeError(`Cannot concatenate values of type "${typeof rightValue}" and "${typeof otherValue}"`);
-			})
+	concat<O>(other: Maybe<O>): Maybe<O> {
+		return this.fold(
+			() => nothing(),
+			() => other,
 		);
 	}
 
