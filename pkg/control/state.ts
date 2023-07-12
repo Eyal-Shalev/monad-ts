@@ -10,8 +10,25 @@ export interface State<TResult, TState> {
 		other: State<OResult, TState>,
 	): State<GetReturnType<TResult>, TState>;
 
+	/**
+	 * Execute the state computation and return the result.
+	 * @param state The initial state.
+	 * @returns The result of the computation.
+	 */
 	eval(state: TState): TResult;
+
+	/**
+	 * Execute the state computation and return the result and the final state.
+	 * @param state The initial state.
+	 * @returns The result of the computation and the final state.
+	 */
 	run(state: TState): [TResult, TState];
+
+	/**
+	 * Execute the state computation and return the final state.
+	 * @param state The initial state.
+	 * @returns The final state.
+	 */
 	exec(state: TState): TState;
 }
 
@@ -70,9 +87,11 @@ export function fromComputation<TResult, TState>(
 	return new StateCls(computation);
 }
 
-export function fromValue<TValue, TState>(value: TValue): State<TValue, TState> {
+export function fromValue<TValue, TState = void>(value: TValue): State<TValue, TState> {
 	return fromComputation((state) => [value, state]);
 }
+
+export const unit = fromValue;
 
 export function $put<TState>(newState: TState) {
 	return fromComputation<void, TState>((_) => [void 0, newState]);
