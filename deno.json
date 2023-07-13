@@ -11,5 +11,6 @@
 		"test": "deno test --check=local --shuffle --doc --parallel",
 		"test-lock": "deno task test --lock-write --no-run --reload",
 		"test-watch": "deno task test --watch"
-	}
+	},
+	"importMap": "import_map.json"
 }

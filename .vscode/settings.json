@@ -33,5 +33,6 @@
 	],
 	"github-actions.workflows.pinned.workflows": [
 		".github/workflows/test.yml"
-	]
+	],
+	"deno.importMap": "./import_map.json"
 }
