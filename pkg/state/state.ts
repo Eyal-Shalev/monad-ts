@@ -1,42 +1,57 @@
 const stateSymbol: unique symbol = Symbol("state");
 
+type MaybePromise<T> = T | Promise<T>;
+
 export interface State<TResult, TState> {
 	readonly kind: typeof stateSymbol;
 
-	readonly computation: (_: TState) => [TResult, TState];
+	readonly computation: (_: TState) => MaybePromise<[TResult, TState]>;
 
 	bind<OResult>(otherComp: (_: TResult) => State<OResult, TState>): State<OResult, TState>;
-	lift<OResult>(otherComp: (_: TResult) => OResult): State<OResult, TState>;
+	lift<OResult>(otherComp: (_: TResult) => OResult): State<Awaited<OResult>, TState>;
 	concat<OResult>(other: State<OResult, TState>): State<OResult, TState>;
 
 	get(): State<TState, TState>;
 	put(newState: TState): State<void, TState>;
 	modify(modifier: (_: TState) => TState): State<void, TState>;
 
-	exec(state: TState): TState;
-	run(state: TState): [TResult, TState];
-	eval(state: TState): TResult;
+	/**
+	 * eval executes the computation and returns a promise of the result.
+	 */
+	eval(state: TState): Promise<TResult>;
+
+	/**
+	 * exec executes the computation and returns a promise of the state.
+	 */
+	exec(state: TState): Promise<TState>;
+
+	/**
+	 * run executes the computation and returns a promise of the result and the state.
+	 */
+	run(state: TState): Promise<[TResult, TState]>;
 }
 
-export function State<TResult, TState>(computation: (_: TState) => [TResult, TState]): State<TResult, TState> {
+export function State<TResult, TState>(
+	computation: (_: TState) => MaybePromise<[TResult, TState]>,
+): State<TResult, TState> {
 	return Object.freeze({
 		kind: stateSymbol,
 		computation,
 		bind<OResult>(otherComp: (_: TResult) => State<OResult, TState>): State<OResult, TState> {
-			return State((state) => {
-				const [result, newState] = computation(state);
+			return State(async (state) => {
+				const [result, newState] = await computation(state);
 				return otherComp(result).run(newState);
 			});
 		},
-		lift<OResult>(otherComp: (_: TResult) => OResult): State<OResult, TState> {
-			return State((state) => {
-				const [result, newState] = computation(state);
-				return [otherComp(result), newState];
+		lift<OResult>(otherComp: (_: TResult) => OResult): State<Awaited<OResult>, TState> {
+			return State(async (state) => {
+				const [result, newState] = await computation(state);
+				return [await otherComp(result), newState];
 			});
 		},
 		concat<OResult>(other: State<OResult, TState>): State<OResult, TState> {
-			return State((state) => {
-				const [_result, newState] = computation(state);
+			return State(async (state) => {
+				const [_result, newState] = await computation(state);
 				return other.run(newState);
 			});
 		},
@@ -49,26 +64,22 @@ export function State<TResult, TState>(computation: (_: TState) => [TResult, TSt
 		modify(modifier: (_: TState) => TState): State<void, TState> {
 			return State((state) => [void 0, modifier(state)]);
 		},
-		exec(state: TState): TState {
-			return computation(state)[1];
+		async eval(state: TState): Promise<TResult> {
+			const result = await computation(state);
+			return result[0];
 		},
-		run(state: TState): [TResult, TState] {
-			return computation(state);
+		async exec(state: TState): Promise<TState> {
+			const result = await computation(state);
+			return result[1];
 		},
-		eval(state: TState): TResult {
-			return computation(state)[0];
+		async run(state: TState): Promise<[TResult, TState]> {
+			return await computation(state);
 		},
 	});
 }
 
-export function fromValue<TValue, TState = unknown>(value: TValue): State<TValue, TState> {
-	return State((state) => [value, state]);
-}
-
-export function fromComputation<TValue, TState>(
-	computation: (_: TState) => [TValue, TState],
-): State<TValue, TState> {
-	return State((state) => computation(state));
+export function fromValue<TValue, TState = unknown>(value: TValue): State<Awaited<TValue>, TState> {
+	return State(async (state) => Promise.resolve([await value, state]));
 }
 
 export const unit = fromValue;

@@ -1,9 +1,9 @@
 import { assertEquals, assertStrictEquals } from "deno-std/testing/asserts.ts";
 import { describe, it } from "deno-std/testing/bdd.ts";
-import { fromComputation, fromValue, isState, unit } from "./state.ts";
+import { fromValue, isState, State, unit } from "./state.ts";
 
 describe("State", () => {
-	describe("3 monadic laws", () => {
+	describe("bind (>>=)", () => {
 		it("unit is a left-identity for bind: unit(x) >>= f <-> f(x)", () => {
 			const value = Math.random();
 			const f = (x: number) => unit(x + 1);
@@ -25,13 +25,13 @@ describe("State", () => {
 		});
 	});
 
-	it("lift lifts a function into the State monad", () => {
+	it("lift (<$>) lifts a function into the State monad", () => {
 		const value = Math.random();
 		const f = (x: number) => x + 1;
 		assertEquals(unit(value).lift(f).computation(void 0), fromValue(f(value)).computation(void 0));
 	});
 
-	it("concat concatenates two State values", () => {
+	it("concat (<>) concatenates two State values", () => {
 		const value = Math.random();
 		const f = (x: number) => unit(x + 1);
 		const g = (x: number) => unit(x * 2);
@@ -41,38 +41,58 @@ describe("State", () => {
 		);
 	});
 
-	it("get returns the state", () => {
+	it("get returns the state", async () => {
 		const state = Symbol("state");
-		assertEquals(unit<void, unknown>(void 0).get().run(state), [state, state]);
+		assertEquals(await unit<void, unknown>(void 0).get().run(state), [state, state]);
 	});
-	it("put sets the state", () => {
+	it("put sets the state", async () => {
 		const state = Symbol("state");
 		const newState = Symbol("newState");
-		assertEquals(unit<void, unknown>(void 0).put(newState).exec(state), newState);
+		assertEquals(await unit<void, unknown>(void 0).put(newState).exec(state), newState);
 	});
-	it("modify applies a function to the state", () => {
+	it("modify applies a function to the state", async () => {
 		const initial = Math.random();
 		const f = (x: number) => x + 1;
-		assertEquals(unit<void, number>(void 0).modify(f).exec(initial), f(initial));
+		assertEquals(await unit<void, number>(void 0).modify(f).exec(initial), f(initial));
 	});
 
 	describe("State execution", () => {
-		it("exec executes the computation and returns the state", () => {
+		it("exec executes the computation and returns the state", async () => {
 			const state = Symbol("state");
-			assertEquals(unit(42).exec(state), state);
+			assertEquals(await unit(42).exec(state), state);
 		});
-		it("run executes the computation and returns the result and the state", () => {
+		it("run executes the computation and returns the result and the state", async () => {
 			let data: undefined | symbol = undefined;
 			const state = Symbol("state");
-			const stateMonad = fromComputation((s: symbol) => {
+			const stateMonad = State((s: symbol) => {
 				data = s;
 				return [42, s];
 			});
-			assertEquals(stateMonad.run(state), [42, state]);
+			assertEquals(await stateMonad.run(state), [42, state]);
 			assertEquals(data, state);
 		});
-		it("eval executes the computation and returns the result", () => {
-			assertEquals(unit(42).eval(Symbol("state")), 42);
+		it("eval executes the computation and returns the result", async () => {
+			assertEquals(await unit(42).eval(Symbol("state")), 42);
+		});
+	});
+
+	describe("async State execution", () => {
+		it("exec executes the computation and returns the state", async () => {
+			const state = Symbol("state");
+			assertEquals(await unit(42).exec(state), state);
+		});
+		it("run executes the computation and returns the result and the state", async () => {
+			let data: undefined | symbol = undefined;
+			const state = Symbol("state");
+			const stateMonad = State((s: symbol) => {
+				data = s;
+				return Promise.resolve([42, s]);
+			});
+			assertEquals(await stateMonad.run(state), [42, state]);
+			assertEquals(data, state);
+		});
+		it("eval executes the computation and returns the result", async () => {
+			assertEquals(await unit(42).eval(Symbol("state")), 42);
 		});
 	});
 
