@@ -1,4 +1,4 @@
-import { MaybePromise } from "../../internal/common.ts";
+import { MaybePromise } from "../../../internal/common.ts";
 
 const stateSymbol: unique symbol = Symbol("state");
 
@@ -117,11 +117,9 @@ export function State<TResult, TState>(state: ComputationFn<TResult, TState>): S
 	return stateStack([{ kind: "compute", state }]);
 }
 
-export function fromValue<TValue, TState = unknown>(value: TValue): State<Awaited<TValue>, TState> {
+export function unit<TValue, TState = unknown>(value: TValue): State<Awaited<TValue>, TState> {
 	return State(async (state) => Promise.resolve([await value, state]));
 }
-
-export const unit = fromValue;
 
 export function isState(state: unknown): state is State<unknown, unknown> {
 	return typeof state === "object" && state !== null && "kind" in state && state.kind === stateSymbol;

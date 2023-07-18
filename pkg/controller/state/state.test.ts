@@ -1,6 +1,6 @@
 import { assertEquals, assertStrictEquals } from "deno-std/testing/asserts.ts";
 import { describe, it } from "deno-std/testing/bdd.ts";
-import { fromValue, isState, State, unit } from "./state.ts";
+import { isState, State, unit } from "./state.ts";
 
 describe("State", () => {
 	describe("bind (>>=)", () => {
@@ -28,7 +28,7 @@ describe("State", () => {
 	it("lift (<$>) lifts a function into the State monad", () => {
 		const value = Math.random();
 		const f = (x: number) => x + 1;
-		assertEquals(unit(value).lift(f).run(void 0), fromValue(f(value)).run(void 0));
+		assertEquals(unit(value).lift(f).run(void 0), unit(f(value)).run(void 0));
 	});
 
 	it("concat (<>) concatenates two State values", () => {

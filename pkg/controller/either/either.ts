@@ -1,4 +1,4 @@
-import { ensureError } from "../../internal/common.ts";
+import { ensureError } from "../../../internal/common.ts";
 
 const EitherSymbol = Symbol("Either");
 
