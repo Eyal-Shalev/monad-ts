@@ -7,11 +7,11 @@ describe("State", () => {
 		it("unit is a left-identity for bind: unit(x) >>= f <-> f(x)", () => {
 			const value = Math.random();
 			const f = (x: number) => unit(x + 1);
-			assertEquals(unit(value).bind(f).computation(void 0), f(value).computation(void 0));
+			assertEquals(unit(value).bind(f).run(void 0), f(value).run(void 0));
 		});
 		it("unit is right-identity for bind: ma >>= unit <-> ma", () => {
 			const m = unit(Symbol("value"));
-			assertEquals(m.bind(unit).computation(void 0), m.computation(void 0));
+			assertEquals(m.bind(unit).run(void 0), m.run(void 0));
 		});
 		it("bind is associative: ma >>= λx → (f(x) >>= g) <-> (ma >>= f) >>= g", () => {
 			const value = Math.random();
@@ -19,8 +19,8 @@ describe("State", () => {
 			const f = (x: number) => unit(x + 1);
 			const g = (x: number) => unit(x * 2);
 			assertEquals(
-				m.bind((x) => f(x).bind(g)).computation(void 0),
-				m.bind(f).bind(g).computation(void 0),
+				m.bind((x) => f(x).bind(g)).run(void 0),
+				m.bind(f).bind(g).run(void 0),
 			);
 		});
 	});
@@ -28,7 +28,7 @@ describe("State", () => {
 	it("lift (<$>) lifts a function into the State monad", () => {
 		const value = Math.random();
 		const f = (x: number) => x + 1;
-		assertEquals(unit(value).lift(f).computation(void 0), fromValue(f(value)).computation(void 0));
+		assertEquals(unit(value).lift(f).run(void 0), fromValue(f(value)).run(void 0));
 	});
 
 	it("concat (<>) concatenates two State values", () => {
@@ -36,8 +36,8 @@ describe("State", () => {
 		const f = (x: number) => unit(x + 1);
 		const g = (x: number) => unit(x * 2);
 		assertEquals(
-			unit(value).bind(f).concat(unit(value).bind(g)).computation(void 0),
-			unit(value).bind((x) => f(x).concat(g(x))).computation(void 0),
+			unit(value).bind(f).concat(unit(value).bind(g)).run(void 0),
+			unit(value).bind((x) => f(x).concat(g(x))).run(void 0),
 		);
 	});
 
@@ -105,5 +105,13 @@ describe("State", () => {
 				assertStrictEquals(isState(value), false);
 			}
 		});
+	});
+
+	it("handles large call stacks", async () => {
+		let m = unit(0);
+		for (let i = 0; i < 10000; i++) {
+			m = m.bind((x) => unit(x + 1));
+		}
+		assertEquals(await m.run(0), [10000, 0]);
 	});
 });
